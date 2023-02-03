@@ -1,5 +1,8 @@
 # hahatoy
-funny code
 
-#cpp
+## funny code
+
+***
+
+### ***CPP***
 * count pointer level
