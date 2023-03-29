@@ -2,6 +2,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <algorithm>
 using std::map;
 using std::vector;
 using std::string;
@@ -12,6 +13,7 @@ using std::string;
 struct SNode {
     int left;
     int right;
+    int depth;
     int id;
     ~SNode(){
         std::cout << "node is removed from memory" << std::endl;
@@ -25,6 +27,7 @@ public:
         _root->left = 1;
         _root->right = 2;
         _root->id = 0;
+        _root->depth = 0;
         associateNode(_root);
     }
 
@@ -50,9 +53,20 @@ public:
         pNewNode->left = pNode->right;
         pNewNode->right = pNewNode->left + 1;
         pNewNode->id = newId;
+        pNewNode->depth = pNode->depth + 1;
         onInsert(pNode->right);
         associateNode(pNewNode);
         return true;
+    }
+
+    vector<SNode*> listNode(int id, bool bAll = false) {
+        vector<SNode*> vecNodes;
+        SNode* pNode = findNode(id);
+        if (pNode == nullptr) {
+            return vecNodes;
+        }
+        getSubNodes(pNode, vecNodes, bAll);
+        return vecNodes;
     }
 
     bool removeNode(int id) {
@@ -104,6 +118,15 @@ public:
         }
         std::cout << "left indexed size is " << _mapLeft2Nodes.size() << std::endl;
         std::cout << "right indexed size is " << _mapRight2Nodes.size() << std::endl;
+        std::cout << "-------------------------------" << std::endl;
+    }
+
+    void dump(const vector<SNode*>& nodes) {
+        std::cout << "-------------------------------" << std::endl;
+        for (auto n : nodes) {
+            std::cout << "id:" << n->id << ", left:" 
+                << n->left << ", right:" << n->right << std::endl;
+        }
         std::cout << "-------------------------------" << std::endl;
     }
 
@@ -197,6 +220,18 @@ private:
         }
     }
 
+    void getSubNodes(SNode* pNode, vector<SNode*>& vecNodes, bool bAll = false) {
+        auto itLeftS = _mapLeft2Nodes.upper_bound(pNode->left);
+        auto itLeftE = _mapLeft2Nodes.lower_bound(pNode->right);
+        for (; itLeftS!=itLeftE; ++itLeftS) {
+            if (itLeftS->second->right < pNode->right) {
+                if (bAll || itLeftS->second->depth == pNode->depth+1) {
+                    vecNodes.push_back(itLeftS->second);
+                }
+            }
+        }
+    }
+
 private:
     SNode* _root;
     map<int, SNode*> _mapId2Nodes;
@@ -224,6 +259,17 @@ vector<string> split(const string& src, const string& delim)
     return result;
 }
 
+vector<string> parseCommand(const string& strCmd) {
+    vector<string> vecLastToken;
+    vector<string> vecToken = split(strCmd, " ");
+    for (auto tk : vecToken) {
+        if (!tk.empty()) {
+            vecLastToken.push_back(std::move(tk));
+        }
+    }
+    return vecLastToken;
+}
+
 int main() {
     CFolder folder;
     string strInput;
@@ -235,6 +281,8 @@ int main() {
                          "m arg1 arg2  --    move arg1 to arg2\n"
                          "p            --    print folder structure\n"
                          "q            --    quit program\n"
+                         "l arg1       --    list sub folder\n"
+                         "la arg1      --    list all sub folder\n"
                          "*****************************************";
 
 #define PRINT_USAGE  std::cout << usage << std::endl;
@@ -245,7 +293,8 @@ int main() {
         } else if (strInput == "p") {
             folder.dump();
         } else {
-            vector<string> vecParams = split(strInput, " ");
+            //vector<string> vecParams = split(strInput, " ");
+            vector<string> vecParams = parseCommand(strInput);
             if (vecParams.size() < 2) {
                 PRINT_USAGE;
                 continue;
@@ -254,7 +303,7 @@ int main() {
             if (strOp == "a") {
                 if (vecParams.size() < 3) {
                     std::cout << "params is invalid!" << std::endl;
-                    exit(-1);
+                    continue;
                 }
                 int id = atoi(vecParams[1].c_str());
                 int newId = atoi(vecParams[2].c_str());
@@ -264,7 +313,7 @@ int main() {
             } else if(strOp == "m") {
                 if (vecParams.size() < 3) {
                     std::cout << "params is invalid!" << std::endl;
-                    exit(-1);
+                    continue;
                 }
                 int srcId = atoi(vecParams[1].c_str());
                 int dstId = atoi(vecParams[2].c_str());
@@ -276,6 +325,14 @@ int main() {
                 if (!folder.removeNode(id)) {
                     std::cout << "remove failed!" << std::endl;
                 }
+            } else if (strOp == "l") {
+                int id = atoi(vecParams[1].c_str());
+                vector<SNode*> r = folder.listNode(id);
+                folder.dump(r);
+            } else if (strOp == "la") {
+                int id = atoi(vecParams[1].c_str());
+                vector<SNode*> r = folder.listNode(id, true);
+                folder.dump(r);
             } else {
                 PRINT_USAGE;
             }
