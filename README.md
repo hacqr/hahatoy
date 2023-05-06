@@ -6,4 +6,4 @@
 
 ### ***CPP***
 * count pointer level
-* simulate folder
+* simulate folder model in database
