@@ -14,7 +14,6 @@ ring_buffer::ring_buffer(unsigned int n)
     n--; 
     n|=n>>1; n|=n>>2; n|=n>>4; n|=n>>8; n|=n>>16; 
     n++;
-    n = (unsigned int)(n==0);
     _ptr = new unsigned char[n];
     _size = n;
     std::cout << "size is " << n << std::endl;
